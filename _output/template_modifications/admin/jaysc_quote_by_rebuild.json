@@ -1,0 +1,9 @@
+{
+    "template": "tools_rebuild",
+    "description": "Adds rebuild job",
+    "execution_order": 10,
+    "enabled": true,
+    "action": "str_replace",
+    "find": "<!--[XF:after_reactions]-->",
+    "replace": "$0\n<xf:macro name=\"rebuild_job\"\n\targ-header=\"[Jaysc] QuoteBy: {{ phrase('jaysc_quoteBy_rebuild') }}\"\n\targ-job=\"Jaysc\\quoteBy:QuoteByBuild\" />"
+}
