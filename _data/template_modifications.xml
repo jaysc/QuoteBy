@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<template_modifications>
+  <modification type="public" template="post_macros" modification_key="jaysc_post_macros_quoted_by" description="Add quoted by bar" execution_order="10" enabled="1" action="str_replace">
+    <find><![CDATA[<footer class="message-footer">]]></find>
+    <replace><![CDATA[$0
+<xf:css src="jaysc_quote_by.less" />
+<xf:if is="$post.QuoteBy is not empty and $post.quote_by_count > 0">
+	<div class="quoteByBlock">
+		{{ phrase('jaysc_quoteBy_quotedBy') }}
+		<xf:foreach loop="$post.QuoteBy" value="$quoteByPost" i="$i">
+			<a href="{{ link('goto/' . 'post', null, {'id': $quoteByPost.Post.post_id}) }}"
+			   rel="nofollow"
+			   data-xf-click="attribution"
+			   data-content-selector="#post-{$quoteByPost.Post.post_id}">{{$quoteByPost.Post.username}}</a>
+			<xf:if is="{$i} < count($post.QuoteBy)">, </xf:if>
+		</xf:foreach>
+	</div>
+</xf:if>
+]]></replace>
+  </modification>
+  <modification type="admin" template="tools_rebuild" modification_key="jaysc_quote_by_rebuild" description="Adds rebuild job" execution_order="10" enabled="1" action="str_replace">
+    <find><![CDATA[<!--[XF:after_reactions]-->]]></find>
+    <replace><![CDATA[$0
+<xf:macro name="rebuild_job"
+	arg-header="[Jaysc] QuoteBy: {{ phrase('jaysc_quoteBy_rebuild') }}"
+	arg-job="Jaysc\quoteBy:QuoteByBuild" />]]></replace>
+  </modification>
+</template_modifications>
