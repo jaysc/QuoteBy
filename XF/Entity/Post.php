@@ -42,7 +42,7 @@ class Post extends XFCP_Post
     {
         parent::_postSave();
 
-        preg_match_all('/\[QUOTE="(?P<username>.+), post: (?P<post>.+), member: (?P<member>.+)"\]/', $this->message, $matches);
+        preg_match_all('/\[QUOTE="(?P<username>[^\s\\\]+), post: (?P<post>\d+), member: (?P<member>\d+)"\]/', $this->message, $matches);
 
         if ($this->isInsert()) {
             $this->saveQuoteByPost($matches);
