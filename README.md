@@ -2,6 +2,8 @@
 
 A xenforo plugin that places a blockmessage on posts which have been quoted in the thread.
 
+Open source for all with license.
+
 ## Installation
 
 Download from release page the latest version and install addon as usual.
