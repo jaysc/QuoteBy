@@ -1,8 +1,8 @@
 # QuoteBy
 
-A xenforo plugin that places a blockmessage on posts which have been quoted in the thread.
+A xenforo plugin that places a blockmessage on posts which have been quoted in the thread. The intention is to ease the folow of conversation by knowing whether there is already an existing conversation chain.
 
-Open source for all with license.
+![QuoteBy example](https://i.imgur.com/LXtodu8.png)
 
 ## Installation
 
