@@ -11,12 +11,12 @@ class QuoteByPost extends Repository
     /**
      * @return Finder
      */
-    public function findExistingQuoteByPostToId(int $postId)
+    public function findExistingQuoteByPostToId($postIds)
     {
         $finder = $this->finder('Jaysc\QuoteBy:Post');
         $finder
             ->setDefaultOrder('post_id', 'DESC')
-            ->where('post_id', '<=', $postId);
+            ->where('post_id', '=', $postIds);
 
         return $finder;
     }
@@ -52,10 +52,11 @@ class QuoteByPost extends Repository
         return $finder;
     }
 
-    public function updateQuoteByPost(Post $post, $quoteByPosts = null)
+    /** @param \Jaysc\QuoteBy\xf\Entity\Post $post */
+    public function updateQuoteByPost(Post $post, $quoteByPosts = [])
     {
-        preg_match_all('/\[QUOTE="(?P<username>.+), post: (?P<post>.+), member: (?P<member>.+)"\]/', $post->message, $matches);
-    
+        $matches = $post->getMatches();
+
         $numOfQuotes = count($matches[0]);
 
         $posted = [];
@@ -75,16 +76,18 @@ class QuoteByPost extends Repository
 
             $key = [$parentPostId, $post->post_id];
 
-            if ($quoteByPosts) {
-                /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $quoteByPost */
+            if (count($quoteByPosts) > 0) {
+                /** @var \Jaysc\QuoteBy\Entity\Post $quoteByPost */
                 foreach ($quoteByPosts as $quoteByPost) {
                     if ($quoteByPost->parent_post_id == $parentPostId) {
                         $exists = true;
+                        break;
                     }
                 }
             }
 
             if ($exists || in_array($key, $posted)) {
+                array_push($posted, $key);
                 continue;
             }
 
@@ -96,6 +99,35 @@ class QuoteByPost extends Repository
             $quoteByPost->save();
 
             array_push($posted, $key);
+        }
+    }
+
+    /** @param \Jaysc\QuoteBy\xf\Entity\Post $post */
+    public function deleteUnreferencedQuoteByPosts(Post $post, $quoteByPosts = []) {
+        $matches = $post->getMatches();
+        
+        /** @var \Jaysc\QuoteBy\Entity\Post $quoteByPost */
+        foreach ($quoteByPosts as $quoteByPost) {
+            if ($quoteByPost->post_id != $post->post_id) {
+                continue;
+            }
+
+            if (!in_array($quoteByPost->parent_post_id, $matches['post'])) {
+                $quoteByPost->delete();
+            }
+        }
+    }
+
+    public function deleteQuoteByPostByPostId(Post $post) {
+        $finder = $this->finder('Jaysc\QuoteBy:Post');
+        $quoteByPosts = $finder
+            ->setDefaultOrder('post_id', 'DESC')
+            ->with('Thread', true)
+            ->with('Post', true)
+            ->where('post_id', $post->post_id)->fetch();
+
+        foreach ($quoteByPosts as $quoteByPost) {
+            $quoteByPost->delete();
         }
     }
 }

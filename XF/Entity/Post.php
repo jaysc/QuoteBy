@@ -2,30 +2,29 @@
 
 namespace Jaysc\QuoteBy\XF\Entity;
 
-use XF\Mvc\Entity\Entity;
 use XF\Mvc\Entity\Structure;
 
 class Post extends XFCP_Post
 {
-    public function quoteByCount()
+    public function quoteByPosts()
     {
-        $count = 0;
 
+        $result = [];
         if ($this && $this->QuoteBy) {
             foreach($this->QuoteBy as $quoteByPost) {
                 if ($quoteByPost->Post->message_state == 'visible') {
-                    $count++;
+                    array_push($result, $quoteByPost);
                 }
             }
         }
 
-        return $count;
+        return $result;
     }
 
     public static function getStructure(Structure $structure)
     {
         $structure = parent::getStructure($structure);
-        $structure->getters['quote_by_count'] = ['getter' => 'quoteByCount', 'cache' => false];
+        $structure->getters['quote_by_posts'] = ['getter' => 'quoteByPosts', 'cache' => false];
 
         $structure->relations['QuoteBy'] = [
             'entity' => 'Jaysc\QuoteBy:Post',
@@ -38,27 +37,43 @@ class Post extends XFCP_Post
         return $structure;
     }
 
+    public function getMatches()
+    {
+        preg_match_all('/\[QUOTE="(?P<username>[^\s\\\]+), post: (?P<post>\d+), member: (?P<member>\d+)"\]/', $this->message, $matches);
+
+        return $matches;
+    }
+
     protected function _postSave()
     {
         parent::_postSave();
 
-        preg_match_all('/\[QUOTE="(?P<username>[^\s\\\]+), post: (?P<post>\d+), member: (?P<member>\d+)"\]/', $this->message, $matches);
+        /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $repo */
+        $repo = $this->repository('Jaysc\QuoteBy:QuoteByPost');
+
+        $matches = $this->getMatches();
 
         if ($this->isInsert()) {
-            $this->saveQuoteByPost($matches);
+            $repo->updateQuoteByPost($this);
         } elseif ($this->isUpdate()) {
             $quoteByPosts = $this->getQuoteByPosts();
 
-            $this->deleteQuoteByPosts($matches, $quoteByPosts);
+            $repo->deleteUnreferencedQuoteByPosts($this, $quoteByPosts);
 
-            $this->saveQuoteByPost($matches, $quoteByPosts);
-        } elseif ($this->isDeleted()) {
-            $quoteByPosts = $this->getQuoteByPosts();
-
-            $this->deleteQuoteByPosts($matches, $quoteByPosts);
+            $repo->updateQuoteByPost($this, $quoteByPosts);
         }
 
         $matches;
+    }
+
+    protected function _postDelete()
+    {
+        parent::_postDelete();
+
+        /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $repo */
+        $repo = $this->repository('Jaysc\QuoteBy:QuoteByPost');
+
+        $repo->deleteQuoteByPostByPostId($this);
     }
 
     protected function getQuoteByPosts()
@@ -71,62 +86,5 @@ class Post extends XFCP_Post
         $quoteByPosts = $finder->fetch();
 
         return $quoteByPosts;
-    }
-
-    protected function deleteQuoteByPosts($matches, $quoteByPosts)
-    {
-        /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $quoteByPost */
-        foreach ($quoteByPosts as $quoteByPost) {
-            if (!in_array($quoteByPost->parent_post_id, $matches['post'])) {
-                $dbQuoteByPost = $this->em()->find('Jaysc\QuoteBy:Post', [$quoteByPost->parent_post_id, $quoteByPost->post_id]);
-
-                $dbQuoteByPost->delete();
-            }
-        }
-    }
-
-    protected function saveQuoteByPost($matches, $quoteByPosts = null)
-    {
-        $numOfQuotes = count($matches[0]);
-
-        $posted = [];
-
-        for ($x = 0; $x < $numOfQuotes; $x++) {
-            $exists = false;
-            //$username = $matches['username'][$x];
-            $parentPostId = $matches['post'][$x];
-            //$member = $matches['member'][$x];
-
-            $parentPost = $this->em()
-                ->find('XF:Post', $parentPostId);
-
-            if (!$parentPost || $parentPost->thread_id != $this->thread_id){
-                continue;
-            }
-
-            $key = [$parentPostId, $this->post_id];
-
-            if ($quoteByPosts) {
-                /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $quoteByPost */
-                foreach ($quoteByPosts as $quoteByPost) {
-                    if ($quoteByPost->parent_post_id == $parentPostId) {
-                        $exists = true;
-                    }
-                }
-            }
-
-            if ($exists || in_array($key, $posted)) {
-                continue;
-            }
-
-            $quoteByPost = $this->em()->create('Jaysc\QuoteBy:Post');
-            $quoteByPost->parent_post_id = $parentPostId;
-            $quoteByPost->post_id = $this->post_id;
-            $quoteByPost->thread_id = $this->thread_id;
-
-            $quoteByPost->save();
-
-            array_push($posted, $key);
-        }
     }
 }

@@ -14,9 +14,6 @@ class QuoteByBuild extends AbstractJob
 
 	public function run($maxRunTime)
 	{
-		if($this->data['start'] == 0) {
-			$this->app->db()->emptyTable('xf_jaysc_quote_by');
-		}
 
 		$startTime = microtime(true);
 
@@ -35,6 +32,26 @@ class QuoteByBuild extends AbstractJob
 		), $this->data['start']);
 		if (!$postIds)
 		{
+			$db->query(
+			"
+				DELETE FROM xf_jaysc_quote_by
+				WHERE (
+					SELECT xf_post.post_id
+					FROM xf_post
+					WHERE xf_post.post_id = xf_jaysc_quote_by.post_id
+				) IS NULL
+			",)->execute();
+
+			$db->query(
+				"
+					DELETE FROM xf_jaysc_quote_by
+					WHERE (
+						SELECT xf_post.post_id
+						FROM xf_post
+						WHERE xf_post.post_id = xf_jaysc_quote_by.parent_post_id
+					) IS NULL
+				",)->execute();
+
 			return $this->complete();
 		}
 
@@ -46,7 +63,7 @@ class QuoteByBuild extends AbstractJob
 
         /** @var \Jaysc\QuoteBy\Repository\QuoteByPost $quoteByRepo */
         $quoteByRepo = $this->app->repository('Jaysc\QuoteBy:QuoteByPost');
-		$quoteByFinder = $quoteByRepo->findExistingQuoteByPostToId($this->data['batch']);
+		$quoteByFinder = $quoteByRepo->findExistingQuoteByPostToId($postIds);
 
 		$quoteByPosts = $quoteByFinder->fetch();
 
@@ -56,6 +73,7 @@ class QuoteByBuild extends AbstractJob
 			$this->data['start'] = $post->post_id;
 
 			$quoteByRepo->updateQuoteByPost($post, $quoteByPosts);
+			$quoteByRepo->deleteUnreferencedQuoteByPosts($post, $quoteByPosts);
 
 			$done++;
 

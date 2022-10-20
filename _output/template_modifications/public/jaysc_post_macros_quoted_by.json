@@ -5,5 +5,5 @@
     "enabled": true,
     "action": "str_replace",
     "find": "<footer class=\"message-footer\">",
-    "replace": "$0\n<xf:css src=\"jaysc_quote_by.less\" />\n<xf:if is=\"$post.QuoteBy is not empty and $post.quote_by_count > 0\">\n\t<div class=\"quoteByBlock\">\n\t\t{{ phrase('jaysc_quoteBy_quotedBy') }}\n\t\t<xf:foreach loop=\"$post.QuoteBy\" value=\"$quoteByPost\" i=\"$i\">\n\t\t\t<a href=\"{{ link('goto/' . 'post', null, {'id': $quoteByPost.Post.post_id}) }}\"\n\t\t\t   rel=\"nofollow\"\n\t\t\t   data-xf-click=\"attribution\"\n\t\t\t   data-content-selector=\"#post-{$quoteByPost.Post.post_id}\">{{$quoteByPost.Post.username}}</a>\n\t\t\t<xf:if is=\"{$i} < count($post.QuoteBy)\">, </xf:if>\n\t\t</xf:foreach>\n\t</div>\n</xf:if>\n"
+    "replace": "$0\n<xf:css src=\"jaysc_quote_by.less\" />\n<xf:if is=\"$post.quote_by_posts is not empty\">\n\t<div class=\"quoteByBlock\">\n\t\t{{ phrase('jaysc_quoteBy_quotedBy') }}\n\t\t<xf:foreach loop=\"$post.quote_by_posts\" value=\"$quoteByPost\" i=\"$i\">\n\t\t\t<a href=\"{{ link('goto/' . 'post', null, {'id': $quoteByPost.Post.post_id}) }}\"\n\t\t\t   rel=\"nofollow\"\n\t\t\t   data-xf-click=\"attribution\"\n\t\t\t   data-content-selector=\"#post-{$quoteByPost.Post.post_id}\">{{$quoteByPost.Post.username}}</a><xf:if is=\"{$i} < count($post.quote_by_posts)\">, </xf:if>\n\t\t</xf:foreach>\n\t</div>\n</xf:if>\n"
 }

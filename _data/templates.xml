@@ -4,7 +4,7 @@
 	margin-top: 20px;
 	padding: 6px 10px;
 	color: @xf-paletteAccent3;
-	background: @xf-paletteAccent1;
+	background: xf-diminish(@xf-contentAltBg, 2%);
 	border-width: 1px;
 	border-style: solid;
 	border-top-color: #dfdfdf;
