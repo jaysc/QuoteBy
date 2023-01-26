@@ -39,7 +39,7 @@ class Post extends XFCP_Post
 
     public function getMatches()
     {
-        preg_match_all('/\[QUOTE="(?P<username>[^\s\\\]+), post: (?P<post>\d+), member: (?P<member>\d+)"\]/', $this->message, $matches);
+        preg_match_all('/\[QUOTE="(?P<username>.+), post: (?P<post>\d+), member: (?P<member>\d+)"\]/', $this->message, $matches);
 
         return $matches;
     }
